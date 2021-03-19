@@ -12,5 +12,6 @@ def main():
         with open(outf, 'w') as f:
             f.write(file_md5_checksum(ncf))
 
+
 if __name__ == '__main__':
     main()
