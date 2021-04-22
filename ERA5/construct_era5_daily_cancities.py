@@ -12,12 +12,10 @@ Author: Pascal Bourgault, 2021
 """
 from dask import compute
 from dask.distributed import Client
-from clisops.core.subset import subset_gridpoint
 import sys
 import xarray as xr
 import xclim as xc
 from xclim.core.units import convert_units_to
-from xclim.testing import open_dataset
 
 
 if len(sys.argv) == 2:
@@ -33,7 +31,7 @@ if __name__ == '__main__':
     print('Starting the construction of ERA5 daily_cancities dataset')
     print(f'Will use data found in {NAMpath} and {GLBpath}')
     # Uses the threads, but not that much memory
-    c  = Client(n_workers=6, threads_per_worker=6, dashboard_address=8786, memory_limit="5GB")
+    c = Client(n_workers=6, threads_per_worker=6, dashboard_address=8786, memory_limit="5GB")
 
     raw_nam = xr.open_mfdataset(NAMpath, chunks={'time': 2928, 'latitude': 25, 'longitude': 50})
 
@@ -63,7 +61,8 @@ if __name__ == '__main__':
         longitude=lon, latitude=lat, method='nearest'
     ).rename(longitude='lon', latitude='lat')
 
-    sub_glb = raw_glb.sel(longitude=lon, latitude=lat, method='nearest'
+    sub_glb = raw_glb.sel(
+        longitude=lon, latitude=lat, method='nearest'
     ).rename(longitude='lon', latitude='lat')
 
     hrly = xr.merge((sub_nam, sub_glb))
@@ -71,10 +70,9 @@ if __name__ == '__main__':
     hrly.lat.attrs.update(lat.attrs)
     # Some of those names are not exact (i.e. tp is not pr), but who cares
     hrly = hrly.rename(
-        t2m='tas', tp='pr', d2m='dtas', sd='swe', sf='prsn', sp='ps', u10='uas', v10='vas', 
+        t2m='tas', tp='pr', d2m='dtas', sd='swe', sf='prsn', sp='ps', u10='uas', v10='vas',
         pev='evpot', msdwswrf='rsds', msdwlwrf='rlds'
     )
-
 
     # Variables computation
     # Loosely regrouped by thematics
@@ -122,7 +120,6 @@ if __name__ == '__main__':
 
     # Liquid water equivalent snow thickness [m] to snow thickness in [m] : lwe [m] * 1000 kg/m³ / 300 kg/m³
     snd = snw / 300
-
 
     prsn.attrs.update(
         standard_name='solid_precipitation_flux',
@@ -239,7 +236,6 @@ if __name__ == '__main__':
         cell_methods='time: sum within days',
     )
 
-
     # Final dataset
     ds = xr.Dataset(
         coords={k: v for k, v in hrly.coords.items() if k != 'time'},
@@ -252,7 +248,7 @@ if __name__ == '__main__':
             'title': 'xclim test dataset from ERA5',
             'source': 'reanalysis',
             'comment': 'Contains modified Copernicus Climate ChangeService information 2020',
-            'institution': 'ECMWF', 
+            'institution': 'ECMWF',
             'references': 'doi:10.24381/cds.adbb2d47',
             'description': (
                 'Test dataset for xclim including all officially supported atmos variables that ERA5 can provide. '
@@ -266,12 +262,11 @@ if __name__ == '__main__':
     # Here we choose which variables to include
     ds = ds.assign(
         tas=tas, tasmax=tasmax, tasmin=tasmin,
-        pr=pr, prsn=prsn, swe=swe, #snw=snw, snd=snd,
-        uas=uas, vas=vas, wsgsmax=wsgsmax, # sfcWind=sfcWind, 
-        dtas=dtas, ps=ps, rh=rh, # psl=psl, huss=huss,
+        pr=pr, prsn=prsn, swe=swe,  # snw=snw, snd=snd,
+        uas=uas, vas=vas, wsgsmax=wsgsmax,  # sfcWind=sfcWind,
+        dtas=dtas, ps=ps, rh=rh,  # psl=psl, huss=huss,
         sund=sund
     )
-
 
     # Save it with a fancy save_mfdataset : enables parallel IO. But we merge it anyway at the end.
     base_path = 'daily_surface_cancities_1990-1993_{var}.nc'
