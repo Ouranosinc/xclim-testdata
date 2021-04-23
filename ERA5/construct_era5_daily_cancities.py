@@ -280,6 +280,7 @@ if __name__ == '__main__':
     compute(delayed)
 
     dss = xr.open_mfdataset('daily_surface_cancities_1990-1993_*.nc')
+    dss = dss.transpose('location', 'time')
     dss.attrs.update(ds.attrs)
     encoding = {'time': {'dtype': 'int32'}}
     for var in dss.data_vars.keys():
