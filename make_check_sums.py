@@ -1,8 +1,13 @@
 #!/usr/bin/env python
-
+import hashlib
 from pathlib import Path
 
-from xarray.tutorial import file_md5_checksum
+
+def file_md5_checksum(fname):
+    hash_md5 = hashlib.md5()
+    with open(fname, "rb") as f:
+        hash_md5.update(f.read())
+    return hash_md5.hexdigest()
 
 
 def main():
