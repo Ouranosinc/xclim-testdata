@@ -264,8 +264,9 @@ if __name__ == '__main__':
         tas=tas, tasmax=tasmax, tasmin=tasmin,
         pr=pr, prsn=prsn, swe=swe,  # snw=snw, snd=snd,
         uas=uas, vas=vas, wsgsmax=wsgsmax,  # sfcWind=sfcWind,
-        dtas=dtas, ps=ps, rh=rh,  # psl=psl, huss=huss,
-        sund=sund
+        tdps=dtas, ps=ps, hurs=rh,  # psl=psl, huss=huss,
+        sund=sund,
+        dtas=dtas, rh=rh, # Retro-compatibility with xclim <= 0.26
     )
 
     # Save it with a fancy save_mfdataset : enables parallel IO. But we merge it anyway at the end.
