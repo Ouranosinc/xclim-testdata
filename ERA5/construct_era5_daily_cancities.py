@@ -111,6 +111,17 @@ if __name__ == '__main__':
         description='Total precipitation thickness converted to mass flux using a water density of 1000 kg/m³.'
     )
 
+    # Total Potential Evapotranspiration in m to flux in kg m-2 s-1, daily sum [m/d] * 1000 kg/m³ / 86400 s/d
+    evspsblpot = hrly.evpot.resample(time='D').sum() * 1000 / 86400
+
+    evspsblpot.attrs.update(
+        standard_name='water_potential_evaporation_flux',
+        long_name='Mean daily potential evaporation flux',
+        units='kg m-2 s-1',
+        cell_methods='time: mean within days',
+        description='Total potential evaporation thickness converted to mass flux using a water density of 1000 kg/m³.'
+    )
+
     # Total snow precip in m of water equivalent to flux in kg m-2 s-1 : daily_sum [m/day] * 1000 kg/m³ / 86400 s/day
     prsn = hrly.prsn.resample(time='D').sum() * 1000 / 86400
 
@@ -262,7 +273,7 @@ if __name__ == '__main__':
     # Here we choose which variables to include
     ds = ds.assign(
         tas=tas, tasmax=tasmax, tasmin=tasmin,
-        pr=pr, prsn=prsn, swe=swe,  # snw=snw, snd=snd,
+        pr=pr, evspsblpot=evspsblpot, prsn=prsn, swe=swe,  # snw=snw, snd=snd,
         uas=uas, vas=vas, wsgsmax=wsgsmax,  # sfcWind=sfcWind,
         tdps=dtas, ps=ps, hurs=rh,  # psl=psl, huss=huss,
         sund=sund,
