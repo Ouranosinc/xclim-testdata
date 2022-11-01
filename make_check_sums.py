@@ -10,12 +10,17 @@ def file_md5_checksum(fname):
     return hash_md5.hexdigest()
 
 
-def main():
+def main(dry_run=False):
     files = Path().cwd().rglob('*.nc')
     for ncf in files:
-        outf = f'{ncf.as_posix()}.md5'
-        with open(outf, 'w') as f:
-            f.write(file_md5_checksum(ncf))
+        md5 = Path(f"{ncf}.md5")
+        if not md5.exists():
+            if dry_run:
+                print(f"Create checksum for {ncf}")
+                continue
+
+            with open(md5, "w") as out:
+                out.write(file_md5_checksum(ncf))
 
 
 if __name__ == '__main__':

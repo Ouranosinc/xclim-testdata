@@ -11,6 +11,8 @@ In order to add a new dataset to the `xclim` testing data, please ensure you per
 4. Commit your changes: `git add testdata_contribution && git commit -m "added my_new_testdata"`
 5. Open a Pull Request.
 
+To modify an existing dataset, be sure to remove the existing checksum file before running the `make_check_sums.py` script.
+
 If you wish to perform preliminary tests against the dataset using `xclim`, this can be done with the following procedure:
 
 ```python
