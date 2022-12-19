@@ -9,8 +9,11 @@ is computed or it is ensured that needed base variables are given here. For exam
 Some of those extra variables are computed here but not included in the final output.
 
 Author: Pascal Bourgault, 2021
+Revised: Trevor James Smith, 2022
 """
+import datetime as dt
 import sys
+import os
 
 import xarray as xr
 import xclim as xc
@@ -20,9 +23,12 @@ from xclim.core.units import convert_units_to
 
 if len(sys.argv) == 2:
     base_path = sys.argv[-1]
+else:
+    base_path = os.getcwd()
 
 # Base Path for converted ERA5
-NAMpath = base_path + "/datasets/reconstruction/ECMWF/ERA5/NAM/day/*/*_day_ecmwf_era5-single-levels_NAM_199[0123].zarr"
+NAMpath = base_path + "/datasets/reconstruction/ECMWF/ERA5/NAM/{time}/*/*_{time}_ecmwf_era5-single-levels_NAM_199[0123].zarr"
+
 
 # Protect dask's threading
 if __name__ == "__main__":
@@ -33,8 +39,12 @@ if __name__ == "__main__":
         n_workers=6, threads_per_worker=6, dashboard_address=8786, memory_limit="5GB"
     )
 
-    raw_nam = xr.open_mfdataset(
-        NAMpath, chunks={"time": 2928, "latitude": 25, "longitude": 50}
+    raw_hrly_nam = xr.open_mfdataset(
+        NAMpath.format(time="1hr"), chunks={"time": 2928, "latitude": 25, "longitude": 50}
+    )
+    raw_dly_nam = xr.open_mfdataset(
+        NAMpath.format(time="day"), chunks={"time": 2928, "latitude": 25, "longitude": 50}
+
     )
 
     location = xr.DataArray(
@@ -64,23 +74,24 @@ if __name__ == "__main__":
         },
     )
 
-    hrly = raw_nam.sel(longitude=lon, latitude=lat, method="nearest").rename(
-        longitude="lon", latitude="lat"
-    )
+    dly = raw_dly_nam.sel(longitude=lon, latitude=lat, method="nearest")
+    hrly = raw_hrly_nam.sel(longitude=lon, latitude=lat, method="nearest").rename(
+        longitude="lon", latitude="lat")
 
-    hrly.lon.attrs.update(lon.attrs)
-    hrly.lat.attrs.update(lat.attrs)
+    dly.lon.attrs.update(lon.attrs)
+    dly.lat.attrs.update(lat.attrs)
     # Some of those names are not exact (i.e. tp is not pr), but who cares
     hrly = hrly.rename(
         t2m="tas",
         tp="pr",
-        d2m="dtas",
+        d2m="tdps",
         sd="swe",
         sf="prsn",
         sp="ps",
+        msl="psl",
         u10="uas",
         v10="vas",
-        pev="evpot",
+        pev="evspsblpot",
         msdwswrf="rsds",
         msdwlwrf="rlds",
     )
@@ -88,9 +99,20 @@ if __name__ == "__main__":
     # Variables computation
     # Loosely regrouped by thematics
 
-    tas = hrly.tas.resample(time="D").mean()
-    tasmin = hrly.tas.resample(time="D").min()
-    tasmax = hrly.tas.resample(time="D").max()
+    if "tas" not in dly.data_vars:
+        tas = hrly.tas.resample(time="D").mean()
+    else:
+        tas = dly.tas
+
+    if "tasmin" not in dly.data_vars:
+        tasmin = hrly.tas.resample(time="D").min()
+    else:
+        tasmin = dly.tasmin
+
+    if "tasmax" not in dly.data_vars:
+        tasmax = hrly.tas.resample(time="D").max()
+    else:
+        tasmax = dly.tasmax
 
     tas.attrs.update(
         standard_name="air_temperature",
@@ -111,8 +133,11 @@ if __name__ == "__main__":
         cell_methods="time: maximum within days",
     )
 
-    # Total precip in m to flux in kg m-2 s-1 : daily_sum [m/day] * 1000 kg/m³ / 86400 s/day
-    pr = hrly.pr.resample(time="D").sum() * 1000 / 86400
+    if "pr" not in dly.data_vars:
+        # Total precip in m to flux in kg m-2 s-1 : daily_sum [m/day] * 1000 kg/m³ / 86400 s/day
+        pr = hrly.pr.resample(time="D").sum() * 1000 / 86400
+    else:
+        pr = dly.pr
 
     pr.attrs.update(
         standard_name="precipitation_flux",
@@ -122,8 +147,11 @@ if __name__ == "__main__":
         description="Total precipitation thickness converted to mass flux using a water density of 1000 kg/m³.",
     )
 
-    # Total Potential Evapotranspiration in m to flux in kg m-2 s-1, daily sum [m/d] * 1000 kg/m³ / 86400 s/d
-    evspsblpot = hrly.evpot.resample(time="D").sum() * 1000 / 86400
+    if "evspsblpot" not in dly.data_vars:
+        # Total Potential Evapotranspiration in m to flux in kg m-2 s-1, daily sum [m/d] * 1000 kg/m³ / 86400 s/d
+        evspsblpot = hrly.evspsblpot.resample(time="D").sum() * 1000 / 86400
+    else:
+        evspsblpot = dly.evspsblpot
 
     evspsblpot.attrs.update(
         standard_name="water_potential_evaporation_flux",
@@ -133,22 +161,37 @@ if __name__ == "__main__":
         description="Total potential evaporation thickness converted to mass flux using a water density of 1000 kg/m³.",
     )
 
-    # Total snow precip in m of water equivalent to flux in kg m-2 s-1 : daily_sum [m/day] * 1000 kg/m³ / 86400 s/day
-    prsn = hrly.prsn.resample(time="D").sum() * 1000 / 86400
+    if "prsn" not in dly.data_vars:
+        # Total snow precip in m of water equivalent to flux in kg m-2 s-1 : daily_sum [m/day] * 1000 kg/m³ / 86400 s/day
+        prsn = hrly.prsn.resample(time="D").sum() * 1000 / 86400
+    else:
+        prsn = dly.prsn
 
-    swe = hrly.swe.resample(time="D").mean()
+    if "swe" not in dly.data_vars:
+        swe = hrly.swe.resample(time="D").mean()
+    else:
+        swe = dly.swe
 
-    snw = swe * 1000
+    if "snw" not in dly.data_vars and "rsn" not in hrly.data_vars:
+        snw = swe * 1000
+    elif "snw" not in dly.data_vars and "rsn" in hrly.data_vars:
+        snw = swe * hrly.rsn.resample(time="D").mean()
+    else:
+        snw = dly.snw
 
-    # Liquid water equivalent snow thickness [m] to snow thickness in [m] : lwe [m] * 1000 kg/m³ / 300 kg/m³
-    snd = snw / 300
+    if "snd" not in dly.data_vars:
+        # Liquid water equivalent snow thickness [m] to snow thickness in [m] : lwe [m] * 1000 kg/m³ / 300 kg/m³
+        snd = snw / 300
+    else:
+        snd = dly.snd
 
     prsn.attrs.update(
         standard_name="solid_precipitation_flux",
         long_name="Mean daily solid precipitation",
         units="kg m-2 s-1",
         cell_methods="time: mean within days",
-        description="Total solid precipitation thickness of water equivalent converted to mass flux using a water density of 1000 kg/m³.",
+        description="Total solid precipitation thickness of water equivalent "
+        "converted to mass flux using a water density of 1000 kg/m³.",
     )
     swe.attrs.update(
         standard_name="lwe_thickness_of_surface_snow_amount",
@@ -161,22 +204,34 @@ if __name__ == "__main__":
         long_name="Surface snow amount",
         units="kg m-2",
         cell_methods="time: mean within days",
-        description="Snow thickness in m of liquid water equivalent converted to snow amount using a water density of 1000 kg/m³.",
+        description="Snow thickness in m of liquid water equivalent "
+        "converted to snow amount using a water density of 1000 kg/m³.",
     )
     snd.attrs.update(
         standard_name="surface_snow_thickness",
         long_name="Snow depth",
         units="m",
         cell_methods="time: mean within days",
-        description="Snow thickness in m of liquid water equivalent converted to snow thickness using a water density of 1000 kg/m³ and a snow density of 300 kg/m³.",
+        description="Snow thickness in m of liquid water equivalent converted "
+        "to snow thickness using a water density of 1000 kg/m³ "
+        "and a snow density of 300 kg/m³.",
     )
 
-    uas = hrly.uas.resample(time="D").mean()
-    vas = hrly.vas.resample(time="D").mean()
+    if "uas" not in dly.data_vars:
+        uas = hrly.uas.resample(time="D").mean()
+    else:
+        uas = dly.uas
 
-    windmag = xc.atmos.wind_speed_from_vector(uas=hrly.uas, vas=hrly.vas)[0]
+    if "vas" not in dly.data_vars:
+        vas = hrly.vas.resample(time="D").mean()
+    else:
+        vas = dly.vas
+
+    windmag, _ = xc.atmos.wind_speed_from_vector(uas=hrly.uas, vas=hrly.vas)
     sfcWind = windmag.resample(time="D").mean()
     wsgsmax = windmag.resample(time="D").max()
+
+    _, sfcWindfromdir = xc.atmos.wind_speed_from_vector(uas=uas, vas=vas)
 
     uas.attrs.update(
         standard_name="eastward_wind",
@@ -196,6 +251,12 @@ if __name__ == "__main__":
         units="m s-1",
         cell_methods="time: mean within days",
     )
+    sfcWindfromdir.attrs.update(
+        standard_name="wind_speed_from_direction",
+        long_name="Daily mean surface wind direction (10 m)",
+        units="degree",
+        cell_methods="time: mean within days",
+    )
     wsgsmax.attrs.update(
         standard_name="wind_speed_of_gust",
         long_name="Daily maximum surface wind speed (10 m)",
@@ -203,8 +264,19 @@ if __name__ == "__main__":
         cell_methods="time: maximum within days",
     )
 
-    ps = hrly.ps.resample(time="D").mean()
-    psl = ps.copy()
+    if "ps" not in dly.data_vars:
+        ps = hrly.ps.resample(time="D").mean()
+    else:
+        ps = dly.ps
+
+    if "psl" not in dly.data_vars:
+        if "psl" not in hrly.data_vars:
+            psl = ps.copy()
+        else:
+            psl = hrly.psl.resample(time="D").mean()
+    else:
+        psl = dly.psl
+
     ps.attrs.update(
         standard_name="surface_air_pressure",
         long_name="Daily mean surface air pressure",
@@ -219,31 +291,35 @@ if __name__ == "__main__":
         description="Copy of surface air pressure.",
     )
 
-    dtas = hrly.dtas.resample(time="D").mean()
-    dtas.attrs.update(
+    if "tdps" not in dly.data_vars:
+        tdps = hrly.tdps.resample(time="D").mean()
+    else:
+        tdps = dly.tdps
+
+    tdps.attrs.update(
         standard_name="dew_point_temperature",
         long_name="Daily mean surface dew point temperature",
         units="K",
         cell_methods="time: mean within days",
     )
 
-    rh = (
+    hurs = (
         convert_units_to(
-            xc.atmos.relative_humidity_from_dewpoint(tas=hrly.tas, dtas=hrly.dtas), "1"
+            xc.atmos.relative_humidity_from_dewpoint(tas=tas, dtas=tdps), "1"
         )
         .resample(time="D")
         .mean(keep_attrs=True)
     )
-    rh.attrs.update(
+    hurs.attrs.update(
         long_name="Daily mean surface relative humidity",
         cell_methods="time: mean within days",
         units="1",
     )
 
-    huss = xc.atmos.specific_humidity(tas=tas, rh=rh, ps=ps)
+    huss = xc.atmos.specific_humidity(tas=tas, rh=hurs, ps=ps)
     huss.attrs.update(
         long_name="Daily mean surface specific humidity",
-        cell_methods="time: mean withinh days",
+        cell_methods="time: mean within days",
         units="1",
     )
 
@@ -261,18 +337,18 @@ if __name__ == "__main__":
 
     # Final dataset
     ds = xr.Dataset(
-        coords={k: v for k, v in hrly.coords.items() if k != "time"},
+        coords={k: v for k, v in dly.coords.items() if k != "time"},
         attrs={
             "Conventions": "CF-1.8",
             "history": xc.core.formatting.update_history(
                 "Spatial extraction, daily aggregation and intermediate computation of raw ERA5 data.",
-                raw_nam,
+                raw_dly_nam,
             ),
             "title": "xclim test dataset from ERA5",
             "source": "reanalysis",
-            "comment": "Contains modified Copernicus Climate ChangeService information 2020",
+            "comment": f"Contains modified Copernicus Climate ChangeService information {dt.date.today().year}",
             "institution": "ECMWF",
-            "references": "doi:10.24381/cds.adbb2d47",
+            "doi": "doi:10.24381/cds.adbb2d47",
             "description": (
                 "Test dataset for xclim including all officially supported atmos variables that ERA5 can provide. "
                 "Intended for testing only, some intermediate variables are only rough approximations, "
@@ -284,22 +360,25 @@ if __name__ == "__main__":
 
     # Here we choose which variables to include
     ds = ds.assign(
+        evspsblpot=evspsblpot,
+        hurs=hurs,
+        huss=huss,
+        pr=pr,
+        prsn=prsn,
+        ps=ps,
+        psl=psl,
+        sfcWind=sfcWind,
+        snd=snd,
+        snw=snw,
+        sund=sund,
+        swe=swe,
         tas=tas,
         tasmax=tasmax,
         tasmin=tasmin,
-        pr=pr,
-        evspsblpot=evspsblpot,
-        prsn=prsn,
-        swe=swe,  # snw=snw, snd=snd,
+        tdps=tdps,
         uas=uas,
         vas=vas,
-        wsgsmax=wsgsmax,  # sfcWind=sfcWind,
-        tdps=dtas,
-        ps=ps,
-        hurs=rh,  # psl=psl, huss=huss,
-        sund=sund,
-        dtas=dtas,
-        rh=rh,  # Retro-compatibility with xclim <= 0.26
+        wsgsmax=wsgsmax,
     )
 
     # Save it with a fancy save_mfdataset : enables parallel IO. But we merge it anyway at the end.
