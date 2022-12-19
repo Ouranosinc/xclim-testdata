@@ -12,8 +12,8 @@ Author: Pascal Bourgault, 2021
 Revised: Trevor James Smith, 2022
 """
 import datetime as dt
-import sys
 import os
+import sys
 
 import xarray as xr
 import xclim as xc
@@ -27,7 +27,10 @@ else:
     base_path = os.getcwd()
 
 # Base Path for converted ERA5
-NAMpath = base_path + "/datasets/reconstruction/ECMWF/ERA5/NAM/{time}/*/*_{time}_ecmwf_era5-single-levels_NAM_199[0123].zarr"
+NAMpath = (
+    base_path
+    + "/datasets/reconstruction/ECMWF/ERA5/NAM/{time}/*/*_{time}_ecmwf_era5-single-levels_NAM_199[0123].zarr"
+)
 
 
 # Protect dask's threading
@@ -40,11 +43,12 @@ if __name__ == "__main__":
     )
 
     raw_hrly_nam = xr.open_mfdataset(
-        NAMpath.format(time="1hr"), chunks={"time": 2928, "latitude": 25, "longitude": 50}
+        NAMpath.format(time="1hr"),
+        chunks={"time": 2928, "latitude": 25, "longitude": 50},
     )
     raw_dly_nam = xr.open_mfdataset(
-        NAMpath.format(time="day"), chunks={"time": 2928, "latitude": 25, "longitude": 50}
-
+        NAMpath.format(time="day"),
+        chunks={"time": 2928, "latitude": 25, "longitude": 50},
     )
 
     location = xr.DataArray(
@@ -76,7 +80,8 @@ if __name__ == "__main__":
 
     dly = raw_dly_nam.sel(longitude=lon, latitude=lat, method="nearest")
     hrly = raw_hrly_nam.sel(longitude=lon, latitude=lat, method="nearest").rename(
-        longitude="lon", latitude="lat")
+        longitude="lon", latitude="lat"
+    )
 
     dly.lon.attrs.update(lon.attrs)
     dly.lat.attrs.update(lat.attrs)
