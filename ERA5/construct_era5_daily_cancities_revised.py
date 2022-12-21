@@ -12,7 +12,7 @@ Author: Pascal Bourgault, 2021
 Revised: Trevor James Smith, 2022
 """
 import datetime as dt
-import os
+from pathlib import Path
 import sys
 
 import xarray as xr
@@ -23,32 +23,33 @@ from dask.distributed import Client
 from xclim.core.units import convert_units_to
 
 if len(sys.argv) == 2:
-    base_path = sys.argv[-1]
+    base_path = Path(sys.argv[-1])
 else:
-    base_path = os.getcwd()
+    base_path = Path().cwd()
 
 # Base Path for converted ERA5
 NAMpath = (
-    base_path
-    + "/datasets/reconstruction/ECMWF/ERA5/NAM/{time}/*/*_{time}_ecmwf_era5-single-levels_NAM_199[0123].zarr"
+    base_path.joinpath(
+        "/datasets/reconstruction/ECMWF/ERA5/NAM/{time}/*/*_{time}_ecmwf_era5-single-levels_NAM_199[0123].zarr"
+    )
 )
 
 
 # Protect dask's threading
 if __name__ == "__main__":
     print("Starting the construction of ERA5 daily_cancities dataset")
-    print(f"Will use data found in {NAMpath}")
+    print(f"Will use data found in {NAMpath.as_posix()}")
     # Uses the threads, but not that much memory
     c = Client(
         n_workers=6, threads_per_worker=6, dashboard_address=8786, memory_limit="5GB"
     )
 
     raw_hrly_nam = xr.open_mfdataset(
-        NAMpath.format(time="1hr"),
+        NAMpath.as_posix().format(time="1hr"),
         chunks={"time": 2928, "latitude": 25, "longitude": 50},
     )
     raw_dly_nam = xr.open_mfdataset(
-        NAMpath.format(time="day"),
+        NAMpath.as_posix().format(time="day"),
         chunks={"time": 2928, "latitude": 25, "longitude": 50},
     )
 
