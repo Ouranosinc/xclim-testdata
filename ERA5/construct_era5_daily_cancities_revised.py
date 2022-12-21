@@ -17,6 +17,7 @@ import sys
 
 import xarray as xr
 import xclim as xc
+from xclim.core import formatting
 from dask import compute
 from dask.distributed import Client
 from xclim.core.units import convert_units_to
@@ -345,7 +346,7 @@ if __name__ == "__main__":
         coords={k: v for k, v in dly.coords.items() if k != "time"},
         attrs={
             "Conventions": "CF-1.8",
-            "history": xc.core.formatting.update_history(
+            "history": formatting.update_history(
                 "Spatial extraction, daily aggregation and intermediate computation of raw ERA5 data.",
                 raw_dly_nam,
             ),
