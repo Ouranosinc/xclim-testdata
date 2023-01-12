@@ -12,15 +12,18 @@ Author: Pascal Bourgault, 2021
 Revised: Trevor James Smith, 2022
 """
 import datetime as dt
-from pathlib import Path
+import logging
 import sys
+from pathlib import Path
 
 import xarray as xr
 import xclim as xc
-from xclim.core import formatting
 from dask import compute
 from dask.distributed import Client
+from xclim.core import formatting
 from xclim.core.units import convert_units_to
+
+logging.basicConfig(level=logging.INFO)
 
 if len(sys.argv) == 2:
     base_path = Path(sys.argv[-1])
@@ -28,29 +31,49 @@ else:
     base_path = Path().cwd()
 
 # Base Path for converted ERA5
-NAMpath = (
-    base_path.joinpath(
-        "/datasets/reconstruction/ECMWF/ERA5/NAM/{time}/*/*_{time}_ecmwf_era5-single-levels_NAM_199[0123].zarr"
-    )
+NAMpath = base_path.joinpath(
+    "/datasets/reconstruction/ECMWF/ERA5/NAM/{time}"
 )
-
+# glob_files = "/*_{time}_ecmwf_era5-single-levels_NAM_199[0123].zarr"
+glob_files = "{variable}_{time}_ecmwf_era5-single-levels_NAM_199{y}*.zarr"
 
 # Protect dask's threading
 if __name__ == "__main__":
-    print("Starting the construction of ERA5 daily_cancities dataset")
-    print(f"Will use data found in {NAMpath.as_posix()}")
+    logging.info("Starting the construction of ERA5 daily_cancities dataset")
+    logging.info(f"Will use data found in {NAMpath.as_posix()}")
     # Uses the threads, but not that much memory
     c = Client(
         n_workers=6, threads_per_worker=6, dashboard_address=8786, memory_limit="5GB"
     )
 
+    logging.info(f"Gathering hourly files")
+    hrly_files = []
+    for variable_folder in Path(NAMpath.as_posix().format(time="1hr")).iterdir():
+        variable = variable_folder.name
+        fpath = Path(NAMpath.as_posix().format(time="1hr")).joinpath(variable)
+        print(fpath)
+        for y in range(4):
+            hrly_files.extend(list(fpath.glob((glob_files.format(time="1hr", variable=variable, y=y)))))
+
     raw_hrly_nam = xr.open_mfdataset(
-        NAMpath.as_posix().format(time="1hr"),
+        hrly_files,
         chunks={"time": 2928, "latitude": 25, "longitude": 50},
+        engine="zarr"
     )
+
+    logging.info(f"Gathering daily files")
+    dly_files = []
+    for variable_folder in Path(NAMpath.as_posix().format(time="day")).iterdir():
+        variable = variable_folder.name
+        fpath = Path(NAMpath.as_posix().format(time="day")).joinpath(variable)
+        print(fpath)
+        for y in range(4):
+            dly_files.extend(list(fpath.glob((glob_files.format(time="day", variable=variable, y=y)))))
+
     raw_dly_nam = xr.open_mfdataset(
-        NAMpath.as_posix().format(time="day"),
+        dly_files,
         chunks={"time": 2928, "latitude": 25, "longitude": 50},
+        engine="zarr"
     )
 
     location = xr.DataArray(
@@ -80,28 +103,29 @@ if __name__ == "__main__":
         },
     )
 
-    dly = raw_dly_nam.sel(longitude=lon, latitude=lat, method="nearest")
-    hrly = raw_hrly_nam.sel(longitude=lon, latitude=lat, method="nearest").rename(
-        longitude="lon", latitude="lat"
-    )
+    hrly = raw_hrly_nam.sel(lon=lon, lat=lat, method="nearest")
+    dly = raw_dly_nam.sel(lon=lon, lat=lat, method="nearest")
 
     dly.lon.attrs.update(lon.attrs)
     dly.lat.attrs.update(lat.attrs)
     # Some of those names are not exact (i.e. tp is not pr), but who cares
-    hrly = hrly.rename(
-        t2m="tas",
-        tp="pr",
-        d2m="tdps",
-        sd="swe",
-        sf="prsn",
-        sp="ps",
-        msl="psl",
-        u10="uas",
-        v10="vas",
-        pev="evspsblpot",
-        msdwswrf="rsds",
-        msdwlwrf="rlds",
-    )
+    try:
+        hrly = hrly.rename(
+            t2m="tas",
+            tp="pr",
+            d2m="tdps",
+            sd="swe",
+            sf="prsn",
+            sp="ps",
+            msl="psl",
+            u10="uas",
+            v10="vas",
+            pev="evspsblpot",
+            msdwswrf="rsds",
+            msdwlwrf="rlds",
+        )
+    except ValueError:
+        pass
 
     # Variables computation
     # Loosely regrouped by thematics
@@ -174,23 +198,28 @@ if __name__ == "__main__":
     else:
         prsn = dly.prsn
 
-    if "swe" not in dly.data_vars:
-        swe = hrly.swe.resample(time="D").mean()
-    else:
-        swe = dly.swe
-
-    if "snw" not in dly.data_vars and "rsn" not in hrly.data_vars:
-        snw = swe * 1000
-    elif "snw" not in dly.data_vars and "rsn" in hrly.data_vars:
-        snw = swe * hrly.rsn.resample(time="D").mean()
-    else:
-        snw = dly.snw
-
-    if "snd" not in dly.data_vars:
-        # Liquid water equivalent snow thickness [m] to snow thickness in [m] : lwe [m] * 1000 kg/m³ / 300 kg/m³
-        snd = snw / 300
-    else:
-        snd = dly.snd
+    # TODO: In ERA5, sd is snow water equivalent (m eq of snow in water)
+    # if "swe" not in dly.data_vars and "swe" not in hrly.data_vars:
+    #     swe = hrly.rsn.resample(time="D").mean() * hrly.snd
+    #
+    # elif "swe" not in dly.data_vars:
+    #     swe = hrly.swe.resample(time="D").mean()
+    #
+    # else:
+    #     swe = dly.swe
+    #
+    # if "snw" not in dly.data_vars and "rsn" not in hrly.data_vars:
+    #     snw = swe * 1000
+    # elif "snw" not in dly.data_vars and "rsn" in hrly.data_vars:
+    #     snw = swe * hrly.rsn.resample(time="D").mean()
+    # else:
+    #     snw = dly.snw
+    #
+    # if "snd" not in dly.data_vars:
+    #     # Liquid water equivalent snow thickness [m] to snow thickness in [m] : lwe [m] * 1000 kg/m³ / 300 kg/m³
+    #     snd = snw / 300
+    # else:
+    #     snd = dly.snd
 
     prsn.attrs.update(
         standard_name="solid_precipitation_flux",
@@ -200,29 +229,29 @@ if __name__ == "__main__":
         description="Total solid precipitation thickness of water equivalent "
         "converted to mass flux using a water density of 1000 kg/m³.",
     )
-    swe.attrs.update(
-        standard_name="lwe_thickness_of_surface_snow_amount",
-        long_name="Liquid water equivalent of surface snow amount",
-        units="m",
-        cell_methods="time: mean within days",
-    )
-    snw.attrs.update(
-        standard_name="surface_snow_amount",
-        long_name="Surface snow amount",
-        units="kg m-2",
-        cell_methods="time: mean within days",
-        description="Snow thickness in m of liquid water equivalent "
-        "converted to snow amount using a water density of 1000 kg/m³.",
-    )
-    snd.attrs.update(
-        standard_name="surface_snow_thickness",
-        long_name="Snow depth",
-        units="m",
-        cell_methods="time: mean within days",
-        description="Snow thickness in m of liquid water equivalent converted "
-        "to snow thickness using a water density of 1000 kg/m³ "
-        "and a snow density of 300 kg/m³.",
-    )
+    # swe.attrs.update(
+    #     standard_name="lwe_thickness_of_surface_snow_amount",
+    #     long_name="Liquid water equivalent of surface snow amount",
+    #     units="m",
+    #     cell_methods="time: mean within days",
+    # )
+    # snw.attrs.update(
+    #     standard_name="surface_snow_amount",
+    #     long_name="Surface snow amount",
+    #     units="kg m-2",
+    #     cell_methods="time: mean within days",
+    #     description="Snow thickness in m of liquid water equivalent "
+    #     "converted to snow amount using a water density of 1000 kg/m³.",
+    # )
+    # snd.attrs.update(
+    #     standard_name="surface_snow_thickness",
+    #     long_name="Snow depth",
+    #     units="m",
+    #     cell_methods="time: mean within days",
+    #     description="Snow thickness in m of liquid water equivalent converted "
+    #     "to snow thickness using a water density of 1000 kg/m³ "
+    #     "and a snow density of 300 kg/m³.",
+    # )
 
     if "uas" not in dly.data_vars:
         uas = hrly.uas.resample(time="D").mean()
@@ -342,7 +371,7 @@ if __name__ == "__main__":
         cell_methods="time: sum within days",
     )
 
-    # Final dataset
+    logging.info("Preparing dataset")
     ds = xr.Dataset(
         coords={k: v for k, v in dly.coords.items() if k != "time"},
         attrs={
@@ -375,10 +404,10 @@ if __name__ == "__main__":
         ps=ps,
         psl=psl,
         sfcWind=sfcWind,
-        snd=snd,
-        snw=snw,
+        # snd=snd,
+        # snw=snw,
         sund=sund,
-        swe=swe,
+        # swe=swe,
         tas=tas,
         tasmax=tasmax,
         tasmin=tasmin,
