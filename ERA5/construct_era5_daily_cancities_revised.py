@@ -193,6 +193,7 @@ if __name__ == "__main__":
         prsn = dly.prsn
 
     snw = hrly.snw.resample(time="D").mean() if "snw" not in dly.data_vars else dly.snw
+    swe = snw / 1000
     snr = hrly.snr.resample(time="D").mean() if "snr" not in dly.data_vars else dly.snr
     if "snd" not in dly.data_vars:
         if "snd" in hrly.data_vars:
@@ -226,6 +227,12 @@ if __name__ == "__main__":
         description="Snow thickness in m of liquid water equivalent converted "
         "to snow thickness using a water density of 1000 kg/m³ "
         "and a snow density of 300 kg/m³.",
+    )
+    swe.attrs.update(
+        standard_name='lwe_thickness_of_surface_snow_amount',
+        long_name='Liquid water equivalent of surface snow amount',
+        units='m',
+        cell_methods='time: mean within days'
     )
 
     if "uas" not in dly.data_vars:
@@ -381,6 +388,7 @@ if __name__ == "__main__":
         sfcWind=sfcWind,
         snd=snd,
         snw=snw,
+        swe=swe,
         # sund=sund,  # not available
         tas=tas,
         tasmax=tasmax,
