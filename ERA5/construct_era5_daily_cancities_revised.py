@@ -102,24 +102,6 @@ if __name__ == "__main__":
 
     dly.lon.attrs.update(lon.attrs)
     dly.lat.attrs.update(lat.attrs)
-    # Some of those names are not exact (i.e. tp is not pr), but who cares
-    try:
-        hrly = hrly.rename(
-            t2m="tas",
-            tp="pr",
-            d2m="tdps",
-            sd="swe",
-            sf="prsn",
-            sp="ps",
-            msl="psl",
-            u10="uas",
-            v10="vas",
-            pev="evspsblpot",
-            msdwswrf="rsds",
-            msdwlwrf="rlds",
-        )
-    except ValueError:
-        pass
 
     # Variables computation
     # Loosely regrouped by thematics
@@ -159,8 +141,8 @@ if __name__ == "__main__":
     )
 
     if "pr" not in dly.data_vars:
-        # Total precip in m to flux in kg m-2 s-1 : daily_sum [m/day] * 1000 kg/m³ / 86400 s/day
-        pr = hrly.pr.resample(time="D").sum() * 1000 / 86400
+        # Total precip flux in kg m-2 s-1
+        pr = hrly.pr.resample(time="D").sum()
     else:
         pr = dly.pr
 
@@ -173,8 +155,8 @@ if __name__ == "__main__":
     )
 
     if "evspsblpot" not in dly.data_vars:
-        # Total Potential Evapotranspiration in m to flux in kg m-2 s-1, daily sum [m/d] * 1000 kg/m³ / 86400 s/d
-        evspsblpot = hrly.evspsblpot.resample(time="D").sum() * 1000 / 86400
+        # Total Potential Evapotranspiration flux in kg m-2 s-1
+        evspsblpot = hrly.evspsblpot.resample(time="D").sum()
     else:
         evspsblpot = dly.evspsblpot
 
@@ -187,8 +169,8 @@ if __name__ == "__main__":
     )
 
     if "prsn" not in dly.data_vars:
-        # Total snow precip in m of water equivalent to flux in kg m-2 s-1 : daily_sum [m/day] * 1000 kg/m³ / 86400 s/day
-        prsn = hrly.prsn.resample(time="D").sum() * 1000 / 86400
+        # Total Solid Precipitation flux in kg m-2 s-1
+        prsn = hrly.prsn.resample(time="D").sum()
     else:
         prsn = dly.prsn
 
@@ -208,25 +190,18 @@ if __name__ == "__main__":
         long_name="Mean daily solid precipitation",
         units="kg m-2 s-1",
         cell_methods="time: mean within days",
-        description="Total solid precipitation thickness of water equivalent "
-        "converted to mass flux using a water density of 1000 kg/m³.",
     )
     snw.attrs.update(
         standard_name="surface_snow_amount",
         long_name="Surface snow amount",
         units="kg m-2",
         cell_methods="time: mean within days",
-        description="Snow thickness in m of liquid water equivalent "
-        "converted to snow amount using a water density of 1000 kg/m³.",
     )
     snd.attrs.update(
         standard_name="surface_snow_thickness",
         long_name="Snow depth",
         units="m",
         cell_methods="time: mean within days",
-        description="Snow thickness in m of liquid water equivalent converted "
-        "to snow thickness using a water density of 1000 kg/m³ "
-        "and a snow density of 300 kg/m³.",
     )
     swe.attrs.update(
         standard_name='lwe_thickness_of_surface_snow_amount',
