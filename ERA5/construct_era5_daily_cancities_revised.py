@@ -25,10 +25,12 @@ from xclim.core.units import convert_units_to
 
 logging.basicConfig(level=logging.INFO)
 
-if len(sys.argv) == 2:
-    base_path = Path(sys.argv[-1])
-else:
-    base_path = Path().cwd()
+# if len(sys.argv) == 2:
+#     base_path = Path(sys.argv[-1])
+# else:
+#     base_path = Path().cwd()
+
+base_path = Path("/tank/scenario")
 
 # Base Path for converted ERA5
 NAMpath = base_path.joinpath(
