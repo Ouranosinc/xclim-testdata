@@ -318,17 +318,27 @@ if __name__ == "__main__":
         units="1",
     )
 
-    # sund = convert_units_to(
-    #     xc.core.units.to_agg_units(
-    #         (hrly.rsds > 120).resample(time="D").sum(), hrly.rsds, "count"
-    #     ),
-    #     "s",
-    # )
-    # sund.attrs.update(
-    #     standard_name="duration_of_sunshine",
-    #     long_name="Daily duration of sunshine",
-    #     cell_methods="time: sum within days",
-    # )
+    if "rsds" not in dly.data_vars:
+        rsds = hrly.rsds.tdps.resample(time="D").mean()
+    else:
+        rsds = dly.rsds
+    rsds.attrs.update(
+        standard_name="surface_downwelling_shortwave_flux",
+        long_name="Surface downwelling shortwave flux",
+        cell_methods="time: mean within days",
+    )
+
+    sund = convert_units_to(
+        xc.core.units.to_agg_units(
+            (hrly.rsds > 120).resample(time="D").sum(), hrly.rsds, "count"
+        ),
+        "s",
+    )
+    sund.attrs.update(
+        standard_name="duration_of_sunshine",
+        long_name="Daily duration of sunshine",
+        cell_methods="time: sum within days",
+    )
 
     logging.info("Preparing dataset")
     ds = xr.Dataset(
@@ -362,11 +372,12 @@ if __name__ == "__main__":
         prsn=prsn,
         ps=ps,
         psl=psl,
+        rsds=rsds,
         sfcWind=sfcWind,
         snd=snd,
         snw=snw,
         swe=swe,
-        # sund=sund,  # not available
+        sund=sund,
         tas=tas,
         tasmax=tasmax,
         tasmin=tasmin,
