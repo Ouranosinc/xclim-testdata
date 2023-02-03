@@ -318,6 +318,26 @@ if __name__ == "__main__":
         units="1",
     )
 
+    if "rlds" not in dly.data_vars:
+        rlds = hrly.rlds.tdps.resample(time="D").mean()
+    else:
+        rlds = dly.rlds
+    rlds.attrs.update(
+        standard_name="surface_downwelling_longwave_flux",
+        long_name="Surface downwelling longwave flux",
+        cell_methods="time: mean within days",
+    )
+
+    if "rls" not in dly.data_vars:
+        rls = hrly.rls.tdps.resample(time="D").mean()
+    else:
+        rls = dly.rls
+    rlds.attrs.update(
+        standard_name="surface_net_downward_longwave_flux",
+        long_name="Surface net downward longwave flux",
+        cell_methods="time: mean within days",
+    )
+
     if "rsds" not in dly.data_vars:
         rsds = hrly.rsds.tdps.resample(time="D").mean()
     else:
@@ -325,6 +345,16 @@ if __name__ == "__main__":
     rsds.attrs.update(
         standard_name="surface_downwelling_shortwave_flux",
         long_name="Surface downwelling shortwave flux",
+        cell_methods="time: mean within days",
+    )
+
+    if "rss" not in dly.data_vars:
+        rss = hrly.rss.tdps.resample(time="D").mean()
+    else:
+        rss = dly.rss
+    rss.attrs.update(
+        standard_name="surface_net_downward_shortwave_flux",
+        long_name="Surface net downward shortwave flux",
         cell_methods="time: mean within days",
     )
 
