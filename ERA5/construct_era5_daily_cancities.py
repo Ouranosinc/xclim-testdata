@@ -419,6 +419,7 @@ if __name__ == "__main__":
         rsds=rsds,
         rss=rss,
         sfcWind=sfcWind,
+        sfcWindfromdir=sfcWindfromdir,
         snd=snd,
         snw=snw,
         sund=sund,
