@@ -22,6 +22,7 @@ import xarray as xr
 import xclim as xc
 from dask import compute
 from dask.distributed import Client
+from numpy import arctan2, cos, sin
 from xclim.core import formatting
 from xclim.core.units import convert_units_to
 
@@ -33,9 +34,7 @@ else:
     base_path = Path().cwd()
 
 # Base Path for converted ERA5
-NAMpath = base_path.joinpath(
-    "datasets/reconstruction/ECMWF/ERA5/NAM/{time}"
-)
+NAMpath = base_path.joinpath("datasets/reconstruction/ECMWF/ERA5/NAM/{time}")
 glob_files = "{variable}_{time}_ecmwf_era5-single-levels_NAM_199{y}*.zarr"
 
 # Protect dask's threading
@@ -59,17 +58,23 @@ if __name__ == "__main__":
             if fpath.exists():
                 logging.info(f"Found {freq} folders for {variable}.")
                 for y in range(4):
-                    files.extend(list(fpath.glob((glob_files.format(time=freq, variable=variable, y=y)))))
+                    files.extend(
+                        list(
+                            fpath.glob(
+                                (glob_files.format(time=freq, variable=variable, y=y))
+                            )
+                        )
+                    )
 
     raw_hrly_nam = xr.open_mfdataset(
         gather["1hr"],
         chunks={"time": 2928, "latitude": 25, "longitude": 50},
-        engine="zarr"
+        engine="zarr",
     )
     raw_dly_nam = xr.open_mfdataset(
         gather["day"],
         chunks={"time": 2928, "latitude": 25, "longitude": 50},
-        engine="zarr"
+        engine="zarr",
     )
 
     location = xr.DataArray(
@@ -144,7 +149,7 @@ if __name__ == "__main__":
 
     if "pr" not in dly.data_vars:
         # Total precip flux in kg m-2 s-1
-        pr = hrly.pr.resample(time="D").sum()
+        pr = hrly.pr.resample(time="D").mean()
     else:
         pr = dly.pr
 
@@ -158,7 +163,7 @@ if __name__ == "__main__":
 
     if "evspsblpot" not in dly.data_vars:
         # Total Potential Evapotranspiration flux in kg m-2 s-1
-        evspsblpot = hrly.evspsblpot.resample(time="D").sum()
+        evspsblpot = hrly.evspsblpot.resample(time="D").mean()
     else:
         evspsblpot = dly.evspsblpot
 
@@ -172,7 +177,7 @@ if __name__ == "__main__":
 
     if "prsn" not in dly.data_vars:
         # Total Solid Precipitation flux in kg m-2 s-1
-        prsn = hrly.prsn.resample(time="D").sum()
+        prsn = hrly.prsn.resample(time="D").mean()
     else:
         prsn = dly.prsn
 
@@ -206,25 +211,31 @@ if __name__ == "__main__":
         cell_methods="time: mean within days",
     )
     swe.attrs.update(
-        standard_name='lwe_thickness_of_surface_snow_amount',
-        long_name='Liquid water equivalent of surface snow amount',
-        units='m',
-        cell_methods='time: mean within days'
+        standard_name="lwe_thickness_of_surface_snow_amount",
+        long_name="Liquid water equivalent of surface snow amount",
+        units="m",
+        cell_methods="time: mean within days",
     )
 
-    if "uas" not in dly.data_vars:
-        uas = hrly.uas.resample(time="D").mean()
+    uas, vas = None, None
+    if (
+        "uas" not in dly.data_vars
+        or "vas" not in dly.data_vars
+        or "sfcWind" not in dly.data_vars
+        or "wsgsmax" not in dly.data_vars
+    ):
+        windmag_interim, _ = xc.atmos.wind_speed_from_vector(uas=hrly.uas, vas=hrly.vas)
+        sfcWind = windmag_interim.resample(time="D").mean()
+        wsgsmax = windmag_interim.resample(time="D").max()
+        theta = arctan2(hrly.vas, hrly.uas)
+
+        uas = cos(theta) * sfcWind
+        vas = sin(theta) * sfcWind
     else:
         uas = dly.uas
-
-    if "vas" not in dly.data_vars:
-        vas = hrly.vas.resample(time="D").mean()
-    else:
         vas = dly.vas
-
-    windmag, _ = xc.atmos.wind_speed_from_vector(uas=hrly.uas, vas=hrly.vas)
-    sfcWind = windmag.resample(time="D").mean()
-    wsgsmax = windmag.resample(time="D").max()
+        sfcWind = dly.sfcWind
+        wsgsmax = dly.wsgsmax
 
     _, sfcWindfromdir = xc.atmos.wind_speed_from_vector(uas=uas, vas=vas)
 
