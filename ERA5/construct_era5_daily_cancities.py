@@ -237,8 +237,6 @@ if __name__ == "__main__":
         sfcWind = dly.sfcWind
         wsgsmax = dly.wsgsmax
 
-    _, sfcWindfromdir = xc.atmos.wind_speed_from_vector(uas=uas, vas=vas)
-
     uas.attrs.update(
         standard_name="eastward_wind",
         long_name="Eastward wind component (10 m)",
@@ -257,17 +255,20 @@ if __name__ == "__main__":
         units="m s-1",
         cell_methods="time: mean within days",
     )
-    sfcWindfromdir.attrs.update(
-        standard_name="wind_speed_from_direction",
-        long_name="Daily mean surface wind direction (10 m)",
-        units="degree",
-        cell_methods="time: mean within days",
-    )
     wsgsmax.attrs.update(
         standard_name="wind_speed_of_gust",
         long_name="Daily maximum surface wind speed (10 m)",
         units="m s-1",
         cell_methods="time: maximum within days",
+    )
+
+    _, sfcWindfromdir = xc.atmos.wind_speed_from_vector(uas=uas, vas=vas)
+
+    sfcWindfromdir.attrs.update(
+        standard_name="wind_speed_from_direction",
+        long_name="Daily mean surface wind direction (10 m)",
+        units="degree",
+        cell_methods="time: mean within days",
     )
 
     if "ps" not in dly.data_vars:
