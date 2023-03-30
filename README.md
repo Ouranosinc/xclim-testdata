@@ -50,10 +50,10 @@ env:
 ## Versioning
 When updating a dataset in `xclim-testdata` using a development branch and Pull Request, once changes have been merged
 to the `main` branch, you should tag a new version of `xclim-testdata`. The version tag of `xclim-testdata` is loosely tied
-to that of `xclim`, and should represent the `xclim` version (**stable**, i.e. version string not ending in `-dev`)
-that is compatible with `xclim-testdata`.
+to that of `xclim`, and should represent the `xclim` release (**stable**, i.e. version string not ending in `-dev`)
+that is compatible with the latest changes in `xclim-testdata`.
 
 > **Warning** 
-> In the event that multiple Pull Requests occur for `xclim-testdata` between two stable versions 
-> (e.g. one for `xclim @ 1.2.3-dev` and another for `xclim @ 1.2.5-dev`),
-> the `xclim-tesdata` tag (e.g. `xclim-testdata @ 1.3.0`) should be replaced with the commit reflecting the most recent changes.
+> In the event that multiple Pull Requests occur for `xclim-testdata` between two stable versions of `xclim`
+> (e.g. one for `v1.2.3-dev` and another for `v1.2.5-dev`), the `xclim-tesdata` tag (e.g. `v1.3.0`)
+> should be replaced with the commit reflecting the most recent changes.
