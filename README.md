@@ -51,4 +51,5 @@ env:
 When updating a dataset in `xclim-testdata` using a development branch and Pull Request,
 once changes have been merged to the `main` branch, you should tag a new version of `xclim-testdata`. 
 
-The version tag of `xclim-testdata` should follow a [calendar versioning](https://calver.org/) scheme (i.e. version string follows from `YYYY.MM.DD-r#`) reflecting the date of the tag creation, with modifiers if required.
+The version tag of `xclim-testdata` should follow a [calendar versioning](https://calver.org/) scheme
+(i.e. version string follows from `vYYYY.MM.DD-r#`) reflecting the date of the tag creation, with modifiers if required.
