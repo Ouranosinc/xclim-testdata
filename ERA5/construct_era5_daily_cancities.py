@@ -222,11 +222,11 @@ if __name__ == "__main__":
         "uas" not in dly.data_vars
         or "vas" not in dly.data_vars
         or "sfcWind" not in dly.data_vars
-        or "wsgsmax" not in dly.data_vars
+        or "sfcWindmax" not in dly.data_vars
     ):
         windmag_interim, _ = xc.atmos.wind_speed_from_vector(uas=hrly.uas, vas=hrly.vas)
         sfcWind = windmag_interim.resample(time="D").mean()
-        wsgsmax = windmag_interim.resample(time="D").max()
+        sfcWindmax = windmag_interim.resample(time="D").max()
         theta = arctan2(hrly.vas, hrly.uas)
 
         uas = cos(theta) * sfcWind
@@ -235,7 +235,7 @@ if __name__ == "__main__":
         uas = dly.uas
         vas = dly.vas
         sfcWind = dly.sfcWind
-        wsgsmax = dly.wsgsmax
+        sfcWindmax = dly.sfcWindmax
 
     uas.attrs.update(
         standard_name="eastward_wind",
@@ -255,7 +255,7 @@ if __name__ == "__main__":
         units="m s-1",
         cell_methods="time: mean within days",
     )
-    wsgsmax.attrs.update(
+    sfcWindmax.attrs.update(
         standard_name="wind_speed_of_gust",
         long_name="Daily maximum surface wind speed (10 m)",
         units="m s-1",
@@ -430,7 +430,7 @@ if __name__ == "__main__":
         tdps=tdps,
         uas=uas,
         vas=vas,
-        wsgsmax=wsgsmax,
+        sfcWindmax=sfcWindmax,
     )
 
     # Needed due to bad metadata in some variable coordinates
