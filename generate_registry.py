@@ -16,7 +16,7 @@ def main(dry_run=False):
     files.extend(data.rglob("*.nc"))
     files.extend(data.rglob("*.csv"))
 
-    registry = Path("registry.txt")
+    registry = Path("data/registry.txt")
     with open(registry, "w", encoding="utf-8") as out:
         for f in files:
             out.write(f"{f.relative_to(Path(__file__).parent.joinpath('data'))} sha256:{file_sha256_checksum(f)}\n")

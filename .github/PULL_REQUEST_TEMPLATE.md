@@ -1,2 +1,2 @@
- - [ ] Regenerated the `registry.txt` file using: `$ python make_check_sums.py`
+ - [ ] Regenerated the `registry.txt` file using: `$ python generate_registry.py`
 
