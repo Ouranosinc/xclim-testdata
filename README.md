@@ -18,7 +18,7 @@ If you wish to perform preliminary tests against the dataset using `xclim`, this
 ```python
 import pooch
 
-GITHUB_URL = "https://github.com/my_username/xhydro-testdata"
+GITHUB_URL = "https://github.com/my_username/xclim-testdata"
 BRANCH_OR_COMMIT_HASH = "my_development_branch"
 
 test_data_path = pooch.retrieve(
