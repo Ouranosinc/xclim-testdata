@@ -68,7 +68,7 @@ env:
   XCLIM_TESTDATA_BRANCH: my_new_testdata_branch
 ```
 
-> ![WARNING]
+> [!WARNING]
 > Be aware that modifying this variable to a value other than the latest tagged version of `xclim-testdata`
 > will trigger a GitHub Workflow that will block merging of your Pull Request until changes are effected.
 
