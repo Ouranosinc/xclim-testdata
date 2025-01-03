@@ -6,7 +6,7 @@ In order to add a new dataset to the `xclim` testing data, please ensure you per
 
 1. Create a new branch: `git checkout -b my_new_testdata_branch`
 2. Place your dataset within an appropriate subdirectory (or create a new one: `mkdir data`).
-3. Run the md5 checksum generation script: `python report_check_sums.py`
+3. Run the sha256 checksum generation script: `python report_check_sums.py`
 4. Commit your changes: `git add testdata_contribution && git commit -m "added my_new_testdata"`
 5. Open a Pull Request.
 
