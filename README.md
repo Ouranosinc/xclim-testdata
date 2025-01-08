@@ -5,34 +5,14 @@ NetCDF example files used for the testing suite of `xclim`
 In order to add a new dataset to the `xclim` testing data, please ensure you perform the following:
 
 1. Create a new branch: `git checkout -b my_new_testdata_branch`
-2. Place your dataset within an appropriate subdirectory (or create a new one: `mkdir data`).
+2. Place your dataset within an appropriate subdirectory (or create a new one, e.g. `mkdir data/my_new_data_folder`).
 3. Run the sha256 checksum generation script: `python report_check_sums.py`
-4. Commit your changes: `git add testdata_contribution && git commit -m "added my_new_testdata"`
+4. Commit your changes: `git add . && git commit -m "added my_new_testdata"`
 5. Open a Pull Request.
 
-To modify an existing dataset, be sure to remove the existing checksum file before running the `make_check_sums.py` script.
+To modify an existing dataset, be sure to remove the existing checksum file before running the `report_check_sums.py` script.
 
-If you wish to perform preliminary tests against the dataset using `xclim`, this can be done with the following procedure:
-
-* To gather a single file:
-```python
-import pooch
-
-GITHUB_URL = "https://github.com/my_username/xclim-testdata"
-BRANCH_OR_COMMIT_HASH = "my_development_branch"
-
-test_data_path = pooch.retrieve(
-    url=f"{GITHUB_URL}/raw/{BRANCH_OR_COMMIT_HASH}/data/my_test_data.nc",
-    known_hash="sha256:1234567890abcdef",
-)
-
-# If your testing data is `xarray`-readable, you can then use the following:
-import xarray as xr
-
-ds = xr.open_dataset(test_data_path)
-```
-
-If you wish to load data from this repository, this can be done with the following procedure:
+If you wish to load data from this repository using `pooch`, this can be done with the following procedure:
 
 * To gather a single file (using the `daily_surface_cancities_1990-1993.nc` file as an example):
 ```python
@@ -40,7 +20,7 @@ import pooch
 import xarray as xr
 
 GITHUB_URL = "https://github.com/Ouranosinc/xclim-testdata"
-BRANCH_OR_COMMIT_HASH = "main"
+BRANCH_OR_COMMIT_HASH = "main" # or a specific branch name or commit hash
 
 test_data_path = pooch.retrieve(
     url=f"{GITHUB_URL}/raw/{BRANCH_OR_COMMIT_HASH}/data/ERA5/daily_surface_cancities_1990-1993.nc",
