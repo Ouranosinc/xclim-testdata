@@ -156,7 +156,7 @@ The version tag of `xclim-testdata` should follow a [calendar versioning](https:
 | SpatialAnalogs/NRCAN_SECan_1981-2010.nc | 2.3 MiB | sha256:bde680ddad84106caad3a2e83a70ecdd8138578a70e875d77c2ec6d3ff868fee |
 | SpatialAnalogs/CanESM2_ScenGen_Chibougamau_2041-2070.nc | 23.5 kiB | sha256:b6cfc4a963d68b6da8978acd26ffb506f33c9c264d8057badd90bf47cd9f3f3d |
 | Raven/q_sim.nc | 661.9 kiB | sha256:f7a0ae73c498235e1c3e7338a184c5ca3729941b81521e606aa60b2c639f6e71 |
-| Raven/gwl.nc | 71.2 kiB | sha256:94213ee5f1c0fd73156de9638647338c9f58af9d136651275f58367817e8cf26 |
+| Raven/gwl_obs.nc | 71.2 kiB | sha256:94213ee5f1c0fd73156de9638647338c9f58af9d136651275f58367817e8cf26 |
 | NRCANdaily/nrcan_canada_daily_tasmin_1990.nc | 6.0 MiB | sha256:13d61fc54cdcb4c1617ec777ccbf59575d8fdc24754f914042301bc1b024d7f7 |
 | NRCANdaily/nrcan_canada_daily_tasmax_1990.nc | 6.0 MiB | sha256:84880205b798740e37a102c7f40e595d7a4fde6e35fb737a1ef68b8dad447526 |
 | NRCANdaily/nrcan_canada_daily_pr_1990.nc | 5.8 MiB | sha256:144479ec7a976cfecb6a10762d128a771356093d72caf5f075508ee86d25a1b0 |
