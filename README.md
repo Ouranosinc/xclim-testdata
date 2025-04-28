@@ -152,7 +152,7 @@ The version tag of `xclim-testdata` should follow a [calendar versioning](https:
 | cmip5/tas_Amon_CanESM2_rcp85_r1i1p1_200701-200712.nc | 431.9 kiB | sha256:7471770e4e654997225ab158f2b24aa0510b6f06006fb757b9ea7c0d4a47e1f2 |
 | cmip3/tas.sresb1.giss_model_e_r.run1.atm.da.nc | 575.4 kiB | sha256:e709552beeeccafcfe280759edf5477ae5241c698409ca051b0899c16e92c95e |
 | SpatialAnalogs/indicators.nc | 1.5 MiB | sha256:3bcbb0e4540d4badc085ac42b9d04a353e815fb55c62271eb73275b889c80a15 |
-| SpatialAnalogs/dissimilarity.nc | 367.3 kiB | sha256:200ab9b7d43d41e6db917c54d35b43e3c5853e0df701e44efd5b813e47590110 |
+| SpatialAnalogs/dissimilarity.nc | 418.9 kiB | sha256:33192fa683f4fa2dfb5f35209036f6eb97ff8cea1944ccae7b006c4c68cf443f |
 | SpatialAnalogs/NRCAN_SECan_1981-2010.nc | 2.3 MiB | sha256:bde680ddad84106caad3a2e83a70ecdd8138578a70e875d77c2ec6d3ff868fee |
 | SpatialAnalogs/CanESM2_ScenGen_Chibougamau_2041-2070.nc | 23.5 kiB | sha256:b6cfc4a963d68b6da8978acd26ffb506f33c9c264d8057badd90bf47cd9f3f3d |
 | Raven/q_sim.nc | 661.9 kiB | sha256:f7a0ae73c498235e1c3e7338a184c5ca3729941b81521e606aa60b2c639f6e71 |
